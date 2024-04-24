@@ -1,48 +1,88 @@
-def deposit_values():
-    arrDeposits = []
-    
-    while True:
-        value = input('Qual valor você quer depositar ? (Digite "sair" para finalizar)\n')
-        if value.lower() == 'sair':
-            break 
-        arrDeposits.append(float(value))
-    return arrDeposits
 
-def withdraw_value(deposits):
-    withdrawa_limit = 0  
-    balance = sum(deposits)
-
-    if deposits:
-        while True:
-            print(f'Saldo disponivel para saque: R$ {balance}'.replace('.', ','),)
-            value = float(input('Qual o valor do saque:'))
-
-            if withdrawa_limit > 3:
-                print('Excedeu o limite de 3 saques. Tente novamente mais tarde!')
-                break
-
-            if value > 500:
-                print('Valor do saque não pode ser maior que R$ 500,00')
-                break
-
-            balance -= value
-            withdrawa_limit +=1
-            print('withdrawa_limit: ', withdrawa_limit)
-
-            print('============ SAQUE REALIZADO COM SUCESSO! ============')
-            print(f'Saldo Atual: R$ {balance}')
-        return [balance] 
-                       
+def depositar(saldo, valor, extrato, /):
+    if valor > 0:
+        saldo += valor
+        extrato += f"Depósito:\tR$ {valor:.2f}\n"
+        print("\n=== Depósito realizado com sucesso! ===")
     else:
-        print('Nenhum valor para sacar.')
+        print("\n@@@ Operação falhou! O valor informado é inválido. @@@")
+
+    return saldo, extrato
 
 
-def extract_values(deposits):
-    if deposits:        
-        print('Valores depositados:')
-        for deposit in deposits:
-            print(f'R$ {deposit}'.replace('.', ','))
-        print('=======================')    
-        print(f'Total R$: {sum(deposits)}'.replace('.', ','),)    
+def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
+    excedeu_saldo = valor > saldo
+    excedeu_limite = valor > limite
+    excedeu_saques = numero_saques >= limite_saques
+
+    if excedeu_saldo:
+        print("\n@@@ Operação falhou! Você não tem saldo suficiente. @@@")
+
+    elif excedeu_limite:
+        print("\n@@@ Operação falhou! O valor do saque excede o limite. @@@")
+
+    elif excedeu_saques:
+        print("\n@@@ Operação falhou! Número máximo de saques excedido. @@@")
+
+    elif valor > 0:
+        saldo -= valor
+        extrato += f"Saque:\t\tR$ {valor:.2f}\n"
+        numero_saques += 1
+        print("\n=== Saque realizado com sucesso! ===")
+
     else:
-        print('Nenhum valor depositado ainda.')
+        print("\n@@@ Operação falhou! O valor informado é inválido. @@@")
+
+    return saldo, extrato
+
+
+def exibir_extrato(saldo, /, *, extrato):
+    print("\n================ EXTRATO ================")
+    print("Não foram realizadas movimentações." if not extrato else extrato)
+    print(f"\nSaldo:\t\tR$ {saldo:.2f}")
+    print("==========================================")
+
+
+def criar_usuario(usuarios):
+    cpf = input("Informe o CPF (somente número): ")
+    usuario = filtrar_usuario(cpf, usuarios)
+
+    if usuario:
+        print("\n@@@ Já existe usuário com esse CPF! @@@")
+        return
+
+    nome = input("Informe o nome completo: ")
+    data_nascimento = input("Informe a data de nascimento (dd-mm-aaaa): ")
+    endereco = input("Informe o endereço (logradouro, nro - bairro - cidade/sigla estado): ")
+
+    usuarios.append({"nome": nome, "data_nascimento": data_nascimento, "cpf": cpf, "endereco": endereco})
+
+    print("=== Usuário criado com sucesso! ===")
+
+
+def filtrar_usuario(cpf, usuarios):
+    usuarios_filtrados = [usuario for usuario in usuarios if usuario["cpf"] == cpf]
+    return usuarios_filtrados[0] if usuarios_filtrados else None
+
+
+def criar_conta(agencia, numero_conta, usuarios):
+    cpf = input("Informe o CPF do usuário: ")
+    usuario = filtrar_usuario(cpf, usuarios)
+
+    if usuario:
+        print("\n=== Conta criada com sucesso! ===")
+        return {"agencia": agencia, "numero_conta": numero_conta, "usuario": usuario}
+
+    print("\n@@@ Usuário não encontrado, fluxo de criação de conta encerrado! @@@")
+
+
+def listar_contas(contas, textwrap):
+    for conta in contas:
+        linha = f"""\
+            Agência:\t{conta['agencia']}
+            C/C:\t\t{conta['numero_conta']}
+            Titular:\t{conta['usuario']['nome']}
+        """
+        print("=" * 100)
+        print(textwrap.dedent(linha))
+

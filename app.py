@@ -1,34 +1,71 @@
-from actions.operations import deposit_values, extract_values, withdraw_value
+from actions.operations import depositar, sacar, exibir_extrato, criar_usuario, criar_conta, listar_contas
+import textwrap
 
-options = '''
-Bem-vindo ao banco .py
+def menu():
+    menu = """\n
+    ================ MENU ================
+    [d]\tDepositar
+    [s]\tSacar
+    [e]\tExtrato
+    [nc]\tNova conta
+    [lc]\tListar contas
+    [nu]\tNovo usuário
+    [q]\tSair
+    => """
+    return input(textwrap.dedent(menu))
 
-Escolha uma opção:
 
-1- Depositar
-2- Saque
-3- Extrato
-4- Encerrar
-'''
+def main():
+    LIMITE_SAQUES = 3
+    AGENCIA = "0001"
 
-deposits = []
+    saldo = 0
+    limite = 500
+    extrato = ""
+    numero_saques = 0
+    usuarios = []
+    contas = []
 
-while True:
-    opt_chosen = input(options)
+    while True:
+        opcao = menu()
 
-    if opt_chosen == '1':
-        deposits += deposit_values()
-           
-    elif opt_chosen == '2':
-        deposits = withdraw_value(deposits)
+        if opcao == "d":
+            valor = float(input("Informe o valor do depósito: "))
 
-    elif opt_chosen == '3':
-        extract_values(deposits)
+            saldo, extrato = depositar(saldo, valor, extrato)
 
-    elif opt_chosen == '4':
-        print('Encerrando o programa. Obrigado por usar nosso banco .py!')
-        break
-    else:
-        print('Opção inválida. Por favor, escolha uma opção válida.')
+        elif opcao == "s":
+            valor = float(input("Informe o valor do saque: "))
 
-        
+            saldo, extrato = sacar(
+                saldo=saldo,
+                valor=valor,
+                extrato=extrato,
+                limite=limite,
+                numero_saques=numero_saques,
+                limite_saques=LIMITE_SAQUES,
+            )
+
+        elif opcao == "e":
+            exibir_extrato(saldo, extrato=extrato)
+
+        elif opcao == "nu":
+            criar_usuario(usuarios)
+
+        elif opcao == "nc":
+            numero_conta = len(contas) + 1
+            conta = criar_conta(AGENCIA, numero_conta, usuarios)
+
+            if conta:
+                contas.append(conta)
+
+        elif opcao == "lc":
+            listar_contas(contas, textwrap)
+
+        elif opcao == "q":
+            break
+
+        else:
+            print("Operação inválida, por favor selecione novamente a operação desejada.")
+
+main()
