@@ -1,48 +1,153 @@
-def deposit_values():
-    arrDeposits = []
-    
-    while True:
-        value = input('Qual valor você quer depositar ? (Digite "sair" para finalizar)\n')
-        if value.lower() == 'sair':
-            break 
-        arrDeposits.append(float(value))
-    return arrDeposits
+from abc import ABC, abstractclassmethod, abstractproperty
+from datetime import datetime
 
-def withdraw_value(deposits):
-    withdrawa_limit = 0  
-    balance = sum(deposits)
+class Conta:
+    def __init__(self, numero, cliente):
+        self._saldo = 0
+        self._numero = numero
+        self._agencia = "0001"
+        self._cliente = cliente
+        self._historico = Historico()
 
-    if deposits:
-        while True:
-            print(f'Saldo disponivel para saque: R$ {balance}'.replace('.', ','),)
-            value = float(input('Qual o valor do saque:'))
+    @classmethod
+    def nova_conta(cls, cliente, numero):
+        return cls(numero, cliente)
 
-            if withdrawa_limit > 3:
-                print('Excedeu o limite de 3 saques. Tente novamente mais tarde!')
-                break
+    @property
+    def saldo(self):
+        return self._saldo
 
-            if value > 500:
-                print('Valor do saque não pode ser maior que R$ 500,00')
-                break
+    @property
+    def numero(self):
+        return self._numero
 
-            balance -= value
-            withdrawa_limit +=1
-            print('withdrawa_limit: ', withdrawa_limit)
+    @property
+    def agencia(self):
+        return self._agencia
 
-            print('============ SAQUE REALIZADO COM SUCESSO! ============')
-            print(f'Saldo Atual: R$ {balance}')
-        return [balance] 
-                       
-    else:
-        print('Nenhum valor para sacar.')
+    @property
+    def cliente(self):
+        return self._cliente
+
+    @property
+    def historico(self):
+        return self._historico
+
+    def sacar(self, valor):
+        saldo = self.saldo
+        excedeu_saldo = valor > saldo
+
+        if excedeu_saldo:
+            print("\n@@@ Operação falhou! Você não tem saldo suficiente. @@@")
+
+        elif valor > 0:
+            self._saldo -= valor
+            print("\n=== Saque realizado com sucesso! ===")
+            return True
+
+        else:
+            print("\n@@@ Operação falhou! O valor informado é inválido. @@@")
+
+        return False
+
+    def depositar(self, valor):
+        if valor > 0:
+            self._saldo += valor
+            print("\n=== Depósito realizado com sucesso! ===")
+        else:
+            print("\n@@@ Operação falhou! O valor informado é inválido. @@@")
+            return False
+
+        return True
 
 
-def extract_values(deposits):
-    if deposits:        
-        print('Valores depositados:')
-        for deposit in deposits:
-            print(f'R$ {deposit}'.replace('.', ','))
-        print('=======================')    
-        print(f'Total R$: {sum(deposits)}'.replace('.', ','),)    
-    else:
-        print('Nenhum valor depositado ainda.')
+class ContaCorrente(Conta):
+    def __init__(self, numero, cliente, limite=500, limite_saques=3):
+        super().__init__(numero, cliente)
+        self.limite = limite
+        self.limite_saques = limite_saques
+
+    def sacar(self, valor):
+        numero_saques = len(
+            [transacao for transacao in self.historico.transacoes if transacao["tipo"] == Saque.__name__]
+        )
+
+        excedeu_limite = valor > self.limite
+        excedeu_saques = numero_saques >= self.limite_saques
+
+        if excedeu_limite:
+            print("\n@@@ Operação falhou! O valor do saque excede o limite. @@@")
+
+        elif excedeu_saques:
+            print("\n@@@ Operação falhou! Número máximo de saques excedido. @@@")
+
+        else:
+            return super().sacar(valor)
+
+        return False
+
+    def __str__(self):
+        return f"""\
+            Agência:\t{self.agencia}
+            C/C:\t\t{self.numero}
+            Titular:\t{self.cliente.nome}
+        """
+
+
+class Historico:
+    def __init__(self):
+        self._transacoes = []
+
+    @property
+    def transacoes(self):
+        return self._transacoes
+
+    def adicionar_transacao(self, transacao):
+        self._transacoes.append(
+            {
+                "tipo": transacao.__class__.__name__,
+                "valor": transacao.valor,
+                "data": datetime.now().strftime("%d-%m-%Y %H:%M:%s"),
+            }
+        )
+
+
+class Transacao(ABC):
+    @property
+    @abstractproperty
+    def valor(self):
+        pass
+
+    @abstractclassmethod
+    def registrar(self, conta):
+        pass
+
+
+class Saque(Transacao):
+    def __init__(self, valor):
+        self._valor = valor
+
+    @property
+    def valor(self):
+        return self._valor
+
+    def registrar(self, conta):
+        sucesso_transacao = conta.sacar(self.valor)
+
+        if sucesso_transacao:
+            conta.historico.adicionar_transacao(self)
+
+
+class Deposito(Transacao):
+    def __init__(self, valor):
+        self._valor = valor
+
+    @property
+    def valor(self):
+        return self._valor
+
+    def registrar(self, conta):
+        sucesso_transacao = conta.depositar(self.valor)
+
+        if sucesso_transacao:
+            conta.historico.adicionar_transacao(self)

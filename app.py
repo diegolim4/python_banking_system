@@ -1,34 +1,10 @@
-from actions.operations import deposit_values, extract_values, withdraw_value
+from actions.operations import Conta, ContaCorrente, Historico, Transacao, Saque, Deposito
+from client.client import Cliente, PessoaFisica
 
-options = '''
-Bem-vindo ao banco .py
+class Main:
+    def __init__(self):
+        self.client = Cliente()
+        self.pessoa_fisica = PessoaFisica()
 
-Escolha uma opção:
-
-1- Depositar
-2- Saque
-3- Extrato
-4- Encerrar
-'''
-
-deposits = []
-
-while True:
-    opt_chosen = input(options)
-
-    if opt_chosen == '1':
-        deposits += deposit_values()
-           
-    elif opt_chosen == '2':
-        deposits = withdraw_value(deposits)
-
-    elif opt_chosen == '3':
-        extract_values(deposits)
-
-    elif opt_chosen == '4':
-        print('Encerrando o programa. Obrigado por usar nosso banco .py!')
-        break
-    else:
-        print('Opção inválida. Por favor, escolha uma opção válida.')
-
-        
+if __name__ == "__main__":
+    main = Main()
